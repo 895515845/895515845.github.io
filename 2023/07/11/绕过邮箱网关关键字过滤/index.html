@@ -1,14 +1,14 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title>  · My Blog</title><meta name="description" content=" - John Doe"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/favicon.png"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="https://895515845.github.io/atom.xml" title="My Blog"><meta name="generator" content="Hexo 6.3.0"><link rel="alternate" href="/atom.xml" title="My Blog" type="application/atom+xml">
 </head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/favicon.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title"></h1><div class="post-info">Jul 11, 2023</div><div class="post-content"><h1 id="绕过邮件网关关键字拦截"><a href="#绕过邮件网关关键字拦截" class="headerlink" title="绕过邮件网关关键字拦截"></a>绕过邮件网关关键字拦截</h1><p>很多邮件网关都会有设置一些拦截关键字的行为，比如附件、密码、补贴等</p>
 <p>先贴上一张效果图</p>
-<p><img src="/.io//image-20230711203343614.png" alt="image-20230711203343614"></p>
+<p><img src="/2023/07/11/%E7%BB%95%E8%BF%87%E9%82%AE%E7%AE%B1%E7%BD%91%E5%85%B3%E5%85%B3%E9%94%AE%E5%AD%97%E8%BF%87%E6%BB%A4/image-20230711203343614.png" alt="image-20230711203343614"></p>
 <p>看起来是很正常的，但是从微信提示看就不一样了</p>
-<p><img src="/.io//image-20230711204038300.png" alt="image-20230711204038300"></p>
+<p><img src="/2023/07/11/%E7%BB%95%E8%BF%87%E9%82%AE%E7%AE%B1%E7%BD%91%E5%85%B3%E5%85%B3%E9%94%AE%E5%AD%97%E8%BF%87%E6%BB%A4/image-20230711204038300.png" alt="image-20230711204038300"></p>
 <h3 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h3><p>其实原理很简单，就是在html代码中添加一段不可见的内容</p>
-<p><img src="/.io//image-20230711203537263.png" alt="image-20230711203537263"></p>
+<p><img src="/2023/07/11/%E7%BB%95%E8%BF%87%E9%82%AE%E7%AE%B1%E7%BD%91%E5%85%B3%E5%85%B3%E9%94%AE%E5%AD%97%E8%BF%87%E6%BB%A4/image-20230711203537263.png" alt="image-20230711203537263"></p>
 <p>问一下GPT</p>
-<p><img src="/.io//image-20230711203719805.png" alt="image-20230711203719805"></p>
+<p><img src="/2023/07/11/%E7%BB%95%E8%BF%87%E9%82%AE%E7%AE%B1%E7%BD%91%E5%85%B3%E5%85%B3%E9%94%AE%E5%AD%97%E8%BF%87%E6%BB%A4/image-20230711203719805.png" alt="image-20230711203719805"></p>
 <p>所以就会导致在邮件正文打开看起来是正常的，但实际上里面在关键字中插入内容是可以绕过邮件网关拦截的</p>
 <p>附上一张实际效果图，真实环境，重码</p>
-<p><img src="/.io//image-20230711203953666.png" alt="image-20230711203953666"></p>
+<p><img src="/2023/07/11/%E7%BB%95%E8%BF%87%E9%82%AE%E7%AE%B1%E7%BD%91%E5%85%B3%E5%85%B3%E9%94%AE%E5%AD%97%E8%BF%87%E6%BB%A4/image-20230711203953666.png" alt="image-20230711203953666"></p>
 </div></article></div></main><footer><div class="paginator"></div><div class="copyright"><p>© 2023 <a href="https://895515845.github.io">John Doe</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script></body></html>
