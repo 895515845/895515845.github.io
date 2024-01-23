@@ -1,0 +1,62 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> 内网靶场（一） · 季伯常  Blog</title><meta name="description" content="内网靶场（一） - null"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/favicon.png"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="https://www.jibochang.link/atom.xml" title="季伯常  Blog"><meta name="generator" content="Hexo 6.3.0"><link rel="alternate" href="/atom.xml" title="季伯常  Blog" type="application/atom+xml">
+</head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/favicon.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">内网靶场（一）</h1><div class="post-info">Jan 23, 2024</div><div class="post-content"><h3 id="0x00-前言"><a href="#0x00-前言" class="headerlink" title="0x00 前言"></a>0x00 前言</h3><p>最近公司内部开放了一些靶场给大家打，一周内打到靶标，目标是freey后台，过程要全程记录，上周和同事打到域就没打了，后面到靶标都是同事在打，过程很坎坷很贴合实战，很多坑没写出来， 攻击路径还是蛮长的，差点就打不完了，用时一周。</p>
+<p>攻击路径如下：</p>
+<p>禅道-&gt;zabbix-&gt;nacos-&gt;linux入域机器-&gt;域控-&gt;运维机-&gt;VPN到靶标</p>
+<p>这周还有一个靶场，在我写这篇文章的时候已经打下靶标，用时2天。</p>
+<h3 id="0x01-入口点"><a href="#0x01-入口点" class="headerlink" title="0x01 入口点"></a>0x01 入口点</h3><p>入口点是个禅道，历史漏洞失败，看到有个adminer</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123195758807.png" alt="image-20240123195758807"></p>
+<p>打开之后有个401认证，账号密码都是admin</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123200050674.png" alt="image-20240123200050674"></p>
+<p>打开之后adminer版本为4.7.7，历史漏洞都不行，尝试使用弱口令爆破，当时有个坑，这里server没填端口，爆破了几万条都没出来，后面填上直接弱口令admin 123456就进去了。。</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123200153594.png" alt="image-20240123200153594"></p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123200246085.png" alt="image-20240123200246085"></p>
+<p>在数据库的表中找到后台的账号密码，然后拿去解密md5</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123200319864.png" alt="image-20240123200319864"></p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123200346504.png" alt="image-20240123200346504"></p>
+<p>密码为xxx@.123，进入后台之后直接命令执行上线cs</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123200509105.png" alt="image-20240123200509105"></p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123200518180.png" alt="image-20240123200518180"></p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123200524188.png" alt="image-20240123200524188"></p>
+<p>上线之后发现系统为centos6，用sudo提权到root</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123200606875.png" alt="image-20240123200606875"></p>
+<h3 id="0x02-内网横向"><a href="#0x02-内网横向" class="headerlink" title="0x02 内网横向"></a>0x02 内网横向</h3><p>到内网后就对172.24段扫描，发现有nacos、zabbix和minio，nacos有权限绕过，进入后台并未发现有什么东西</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123200749397.png" alt="image-20240123200749397"></p>
+<p>nacos无果转zabbix，弱口令失败，尝试爆破密码，根据前面密码xxx@.123，判断前面的xxx@不会变，后面的.123可能是主机ip(因为前面禅道的后台密码和上线ip是一致的)，成功爆破出xxx@.010，通过反弹shell上线nacos、minio和zabbix</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123201022536.png" alt="image-20240123201022536"></p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123201101989.png" alt="image-20240123201101989"></p>
+<p>在zabbix和minio信息收集没发现什么，在nacos上用pwnkit提权到root，在&#x2F;home&#x2F;xxx&#x2F;.ssh&#x2F;发现有公私钥</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123201255622.png" alt="image-20240123201255622"></p>
+<p>通过ssh上线发现为双网卡，还有一个192.168.20的段</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123201324568.png" alt="image-20240123201324568"></p>
+<p>接着对该机器进行提权，pwnkit，sudo提权都失败，通过查找suid，找到find命令设置了S属性，提权到root</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123201509592.png" alt="image-20240123201509592"></p>
+<p>然后对当前机器信息收集，发现网络连接有和192.168.20.x的389端口通信，熟悉域的都知道这是ldap端口，猜测当前机器可能加入到域。在&#x2F;etc目录下看到有krb5.conf配置文件，当前域为template.local</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123201644002.png" alt="image-20240123201644002"></p>
+<p>etc下还有个krb5.keytab，通过keytabextract.py解析获得hash，成功获得域账户</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123201731809.png" alt="image-20240123201731809"></p>
+<h3 id="0x03-域横向"><a href="#0x03-域横向" class="headerlink" title="0x03 域横向"></a>0x03 域横向</h3><p>使用当前账户枚举域内信息</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123201903580.png" alt="image-20240123201903580"></p>
+<p>发现存在一个域管tpadmins</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123201931244.png" alt="image-20240123201931244"></p>
+<p>域内有三台机器，win10、域控和当前的linux</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123201951057.png" alt="image-20240123201951057"></p>
+<p>前期在对入域的linux的机器信息收集时发现，在home目录下有tpadmins的文件夹，说明有登陆过当前主机，并且查询到当前机器有sssd服务</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123202152711.png" alt="image-20240123202152711"></p>
+<p>通过工具抓取sssd内存中凭证，成功抓到tpadmins的hash</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123202217975.png" alt="image-20240123202217975"></p>
+<p>本地对hash进行破解，解密出明文Admin@1234</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123202256880.png" alt="image-20240123202256880"></p>
+<p>通过tpadmins账户直接上线域控</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123202324519.png" alt="image-20240123202324519"></p>
+<p>前期扫描并未发现win10主机的ip地址，通过dig反查出ip，再通过全端口扫描发现开启了5985(winrm)，通过winrm横向上线cs</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123202517826.png" alt="image-20240123202517826"></p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123202535875.png" alt="image-20240123202535875"></p>
+<p>抓取浏览器密码没抓到东西，因为用的是域管的账号，后面用yunwei这个域账号去抓就抓到了凭证和记录</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123202651889.png" alt="image-20240123202651889"></p>
+<p>在桌面上看到有个kdbx的文件，是keepass的数据库工具，通过上面抓的密码pt打开到数据库，并获取到了vpn和ferry的密码</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123202747339.png" alt="image-20240123202747339"></p>
+<p>之后通过vpn接入成功拿到靶标后台</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123202817555.png" alt="image-20240123202817555"></p>
+<p>列一下成果</p>
+<p><img src="/2024/01/23/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/image-20240123203100772.png" alt="image-20240123203100772"></p>
+</div></article></div></main><footer><div class="paginator"><a href="/2023/11/26/%E5%AE%9E%E6%88%98%E6%89%93ntlmrelay/" class="next">NEXT</a></div><div class="copyright"><p>© 2024 <a href="https://www.jibochang.link"></a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script></body></html>
