@@ -6,10 +6,30 @@
   <link href="https://www.jibochang.link/atom.xml" rel="self"/>
   
   <link href="https://www.jibochang.link/"/>
-  <updated>2024-01-23T12:51:05.261Z</updated>
+  <updated>2024-02-16T14:32:18.353Z</updated>
   <id>https://www.jibochang.link/</id>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>应急知识-pf文件缓存</title>
+    <link href="https://www.jibochang.link/2024/02/16/%E5%BA%94%E6%80%A5%E7%9F%A5%E8%AF%86-pf%E6%96%87%E4%BB%B6%E7%BC%93%E5%AD%98/"/>
+    <id>https://www.jibochang.link/2024/02/16/%E5%BA%94%E6%80%A5%E7%9F%A5%E8%AF%86-pf%E6%96%87%E4%BB%B6%E7%BC%93%E5%AD%98/</id>
+    <published>2024-02-16T14:28:00.000Z</published>
+    <updated>2024-02-16T14:32:18.353Z</updated>
+    
+    <content type="html"><![CDATA[<h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>Prefetch预读取文件，简称pf文件，是从Windows XP开始引入，作用是加速系统和应用程序启动过程。pf文件包含了可执行文件的名称、路径、调用DLL文件的列表、上次执行时间、运行次数等信息。简单来说，就相当于缓存。在Windows 7中可以记录128个条目，Windows 8&#x2F;10可记录1024个条目。pf文件存储在%SystemRoot%\Prefetch文件夹中。</p><p>简单来说pf文件就是程序执行的缓存记录，可以通过查看缓存记录进行分析。</p><h3 id="实战分析"><a href="#实战分析" class="headerlink" title="实战分析"></a>实战分析</h3><blockquote><p>当前机器被勒索，文件被加密，需要溯源分析。</p></blockquote><p>everything看到很多pf文件的缓存</p><p><img src="/2024/02/16/%E5%BA%94%E6%80%A5%E7%9F%A5%E8%AF%86-pf%E6%96%87%E4%BB%B6%E7%BC%93%E5%AD%98/image-20240216221122002.png" alt="image-20240216221122002"></p><p>这里看到有一些黑客工具的pf文件，mim.exe、netpass64，password64之类的，通过<code>PEcmd.exe</code>进行分析取证 <a href="https://github.com/EricZimmerman/PECmd">https://github.com/EricZimmerman/PECmd</a></p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pecmd.exe -f CHROMEBASE.exe.pf --csv .</span><br></pre></td></tr></table></figure><p><img src="/2024/02/16/%E5%BA%94%E6%80%A5%E7%9F%A5%E8%AF%86-pf%E6%96%87%E4%BB%B6%E7%BC%93%E5%AD%98/image-20240216221547971.png" alt="image-20240216221547971"></p><p>通过列出的信息可以看到他访问了chrome的文件夹，通过这些目录分析，可以推测出这是个chrome信息获取的工具(在exe文件名不知道的情况下)，再看另外一个netpass.exe</p><p><img src="/2024/02/16/%E5%BA%94%E6%80%A5%E7%9F%A5%E8%AF%86-pf%E6%96%87%E4%BB%B6%E7%BC%93%E5%AD%98/image-20240216221837013.png" alt="image-20240216221837013"></p><p>可以看到他读取了administrator目录下appdata的一些本地凭证，还访问了mimik文件夹(mimik文件夹在应急中文件夹已经被删除)，通过这里分析出又做出一些本地密码抓取的行为，再结合其他的pf文件分析，就可以推断出攻击者做了哪些操作。</p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;h3 id=&quot;简介&quot;&gt;&lt;a href=&quot;#简介&quot; class=&quot;headerlink&quot; title=&quot;简介&quot;&gt;&lt;/a&gt;简介&lt;/h3&gt;&lt;p&gt;Prefetch预读取文件，简称pf文件，是从Windows XP开始引入，作用是加速系统和应用程序启动过程。pf文件包含了可执行文件的名称</summary>
+      
+    
+    
+    
+    
+  </entry>
   
   <entry>
     <title>内网靶场（一）</title>
