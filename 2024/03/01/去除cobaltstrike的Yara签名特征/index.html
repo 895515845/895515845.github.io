@@ -1,0 +1,50 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> 去除cobaltstrike的Yara签名特征 · 季伯常  Blog</title><meta name="description" content="去除cobaltstrike的Yara签名特征 - null"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/favicon.png"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="https://www.jibochang.link/atom.xml" title="季伯常  Blog"><meta name="generator" content="Hexo 6.3.0"><link rel="alternate" href="/atom.xml" title="季伯常  Blog" type="application/atom+xml">
+</head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/favicon.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">去除cobaltstrike的Yara签名特征</h1><div class="post-info">Mar 1, 2024</div><div class="post-content"><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>大家都知道cs默认是有很多特征的，但我们可以用profile去除掉很多的特征，基础的修改就不多说，网上很多文章，这里用团队的profile来检测一下生成的raw有多少规则，用的是Elastic的规则。</p>
+<h2 id="规则检测"><a href="#规则检测" class="headerlink" title="规则检测"></a>规则检测</h2><p>先用cs生成一个无阶段的raw文件(如果有udrl的记得unload)</p>
+<p><img src="/2024/03/01/%E5%8E%BB%E9%99%A4cobaltstrike%E7%9A%84Yara%E7%AD%BE%E5%90%8D%E7%89%B9%E5%BE%81/image-20240301145834328.png" alt="image-20240301145834328"></p>
+<p>然后用yara检测一下，发现还是有不少特征的，一条条的来。</p>
+<p><img src="/2024/03/01/%E5%8E%BB%E9%99%A4cobaltstrike%E7%9A%84Yara%E7%AD%BE%E5%90%8D%E7%89%B9%E5%BE%81/image-20240301153634476.png" alt="image-20240301153634476"></p>
+<p><img src="/2024/03/01/%E5%8E%BB%E9%99%A4cobaltstrike%E7%9A%84Yara%E7%AD%BE%E5%90%8D%E7%89%B9%E5%BE%81/image-20240301154306510.png" alt="image-20240301154306510"></p>
+<h2 id="Windows-Trojan-CobaltStrike-f0b627fc"><a href="#Windows-Trojan-CobaltStrike-f0b627fc" class="headerlink" title="Windows_Trojan_CobaltStrike_f0b627fc"></a>Windows_Trojan_CobaltStrike_f0b627fc</h2><p><img src="/2024/03/01/%E5%8E%BB%E9%99%A4cobaltstrike%E7%9A%84Yara%E7%AD%BE%E5%90%8D%E7%89%B9%E5%BE%81/image-20240301155059667.png" alt="image-20240301155059667"></p>
+<p>先dbg来调试查看，在CPU中，搜索-&gt;所有模块-&gt;匹配特征</p>
+<p><img src="/2024/03/01/%E5%8E%BB%E9%99%A4cobaltstrike%E7%9A%84Yara%E7%AD%BE%E5%90%8D%E7%89%B9%E5%BE%81/image-20240301153857571.png" alt="image-20240301153857571"></p>
+<p>然后把刚刚查出来的十六进制丢进去搜索</p>
+<p><img src="/2024/03/01/%E5%8E%BB%E9%99%A4cobaltstrike%E7%9A%84Yara%E7%AD%BE%E5%90%8D%E7%89%B9%E5%BE%81/image-20240301154002210.png" alt="image-20240301154002210"></p>
+<p><img src="/2024/03/01/%E5%8E%BB%E9%99%A4cobaltstrike%E7%9A%84Yara%E7%AD%BE%E5%90%8D%E7%89%B9%E5%BE%81/image-20240301154005703.png" alt="image-20240301154005703"></p>
+<p>出现了两条，先点第一个进去，发现就是这两行，复制一下内存地址，然后ctrl+g 跳转过去</p>
+<p><img src="/2024/03/01/%E5%8E%BB%E9%99%A4cobaltstrike%E7%9A%84Yara%E7%AD%BE%E5%90%8D%E7%89%B9%E5%BE%81/image-20240301154033603.png" alt="image-20240301154033603"></p>
+<p><img src="/2024/03/01/%E5%8E%BB%E9%99%A4cobaltstrike%E7%9A%84Yara%E7%AD%BE%E5%90%8D%E7%89%B9%E5%BE%81/image-20240301154111033.png" alt="image-20240301154111033"></p>
+<p>这里就是规则点，看看一下汇编</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">and eax,FFFFF</span><br><span class="line">cmp eax,414141</span><br><span class="line">jne baseloader.7FF61DAA95A3</span><br></pre></td></tr></table></figure>
+
+<p>这里汇编就是用eax去比较是否是414141，直接修改一下代码用mov eax,414141让他逻辑正常</p>
+<p><img src="/2024/03/01/%E5%8E%BB%E9%99%A4cobaltstrike%E7%9A%84Yara%E7%AD%BE%E5%90%8D%E7%89%B9%E5%BE%81/image-20240301154331459.png" alt="image-20240301154331459"></p>
+<p>改好之后补丁一下，再去扫描一下</p>
+<p><img src="/2024/03/01/%E5%8E%BB%E9%99%A4cobaltstrike%E7%9A%84Yara%E7%AD%BE%E5%90%8D%E7%89%B9%E5%BE%81/image-20240301154432502.png" alt="image-20240301154432502"></p>
+<p>发现确实少了一条，另外一条就是上面看到的另外一个，也一起修改一下</p>
+<p><img src="/2024/03/01/%E5%8E%BB%E9%99%A4cobaltstrike%E7%9A%84Yara%E7%AD%BE%E5%90%8D%E7%89%B9%E5%BE%81/image-20240301154745345.png" alt="image-20240301154745345"></p>
+<p>bypass之后测试上线正常</p>
+<p><img src="/2024/03/01/%E5%8E%BB%E9%99%A4cobaltstrike%E7%9A%84Yara%E7%AD%BE%E5%90%8D%E7%89%B9%E5%BE%81/image-20240301154944816.png" alt="image-20240301154944816"></p>
+<p>直接用python来改</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">replace_bytes</span>(<span class="params">input_filename, output_filename</span>):</span><br><span class="line">    search_bytes      = <span class="string">b&quot;\x25\xff\xff\xff\x00\x3d\x41\x41\x41\x00&quot;</span></span><br><span class="line">    replacement_bytes = <span class="string">b&quot;\xb8\x41\x41\x41\x00\x3D\x41\x41\x41\x00&quot;</span></span><br><span class="line">  </span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(input_filename, <span class="string">&quot;rb&quot;</span>) <span class="keyword">as</span> input_file:</span><br><span class="line">        content = input_file.read()</span><br><span class="line">        modified_content = content.replace(search_bytes, replacement_bytes)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(output_filename, <span class="string">&quot;wb&quot;</span>) <span class="keyword">as</span> output_file:</span><br><span class="line">        output_file.write(modified_content)</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;Modified content saved to <span class="subst">&#123;output_filename&#125;</span>.&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Example usage</span></span><br><span class="line">input_filename = <span class="string">&quot;beacon_x64.bin&quot;</span></span><br><span class="line">output_filename = <span class="string">&quot;output.bin&quot;</span></span><br><span class="line">replace_bytes(input_filename, output_filename)</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="Windows-Trojan-CobaltStrike-1787eef5"><a href="#Windows-Trojan-CobaltStrike-1787eef5" class="headerlink" title="Windows_Trojan_CobaltStrike_1787eef5"></a>Windows_Trojan_CobaltStrike_1787eef5</h2><p><img src="/2024/03/01/%E5%8E%BB%E9%99%A4cobaltstrike%E7%9A%84Yara%E7%AD%BE%E5%90%8D%E7%89%B9%E5%BE%81/image-20240301155047094.png" alt="image-20240301155047094"></p>
+<p>这个规则很明显是PE头4D5A的特征，直接用profile来修改PE头信息</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">set magic_mz_x64    &quot;AABB&quot;;</span><br><span class="line">set magic_mz_x86    &quot;CCDD&quot;;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>改好就直接bypass了</p>
+<p><img src="/2024/03/01/%E5%8E%BB%E9%99%A4cobaltstrike%E7%9A%84Yara%E7%AD%BE%E5%90%8D%E7%89%B9%E5%BE%81/image-20240301155527020.png" alt="image-20240301155527020"></p>
+<h2 id="Windows-Trojan-CobaltStrike-3dc22d14"><a href="#Windows-Trojan-CobaltStrike-3dc22d14" class="headerlink" title="Windows_Trojan_CobaltStrike_3dc22d14"></a>Windows_Trojan_CobaltStrike_3dc22d14</h2><p><img src="/2024/03/01/%E5%8E%BB%E9%99%A4cobaltstrike%E7%9A%84Yara%E7%AD%BE%E5%90%8D%E7%89%B9%E5%BE%81/image-20240301155830154.png" alt="image-20240301155830154"></p>
+<p>这个%02d在c里面是数字宽度2,位置不足左边补0，%.2d和%02d效果一样，直接修改一下</p>
+<p><img src="/2024/03/01/%E5%8E%BB%E9%99%A4cobaltstrike%E7%9A%84Yara%E7%AD%BE%E5%90%8D%E7%89%B9%E5%BE%81/image-20240301160200556.png" alt="image-20240301160200556"></p>
+<p>修改之后也是没检测出来了</p>
+<p><img src="/2024/03/01/%E5%8E%BB%E9%99%A4cobaltstrike%E7%9A%84Yara%E7%AD%BE%E5%90%8D%E7%89%B9%E5%BE%81/image-20240301160231560.png" alt="image-20240301160231560"></p>
+<p>最后也是能成功上线</p>
+<p><img src="/2024/03/01/%E5%8E%BB%E9%99%A4cobaltstrike%E7%9A%84Yara%E7%AD%BE%E5%90%8D%E7%89%B9%E5%BE%81/image-20240301160252804.png" alt="image-20240301160252804"></p>
+<p>为了方便直接在profile里面用strrep替换就行了</p>
+<p><img src="/2024/03/01/%E5%8E%BB%E9%99%A4cobaltstrike%E7%9A%84Yara%E7%AD%BE%E5%90%8D%E7%89%B9%E5%BE%81/image-20240301162956905.png" alt="image-20240301162956905"></p>
+</div></article></div></main><footer><div class="paginator"><a href="/2024/02/16/%E5%BA%94%E6%80%A5%E5%93%8D%E5%BA%94-pf%E6%96%87%E4%BB%B6%E7%BC%93%E5%AD%98/" class="next">NEXT</a></div><div class="copyright"><p>© 2024 <a href="https://www.jibochang.link"></a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script></body></html>
