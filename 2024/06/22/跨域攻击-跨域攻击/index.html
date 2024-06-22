@@ -43,7 +43,7 @@
 
 <p><img src="/2024/06/22/%E8%B7%A8%E5%9F%9F%E6%94%BB%E5%87%BB-%E8%B7%A8%E5%9F%9F%E6%94%BB%E5%87%BB/image-20240622192809316.png" alt="image-20240622192809316"></p>
 <p>需要看从子域到父域的rc4_hmac_nt就是key</p>
-<h4 id="impacket"><a href="#impacket" class="headerlink" title="impacket"></a>impacket</h4><p>正常都知道在域内加了$符号的是机器账户。在域林内就不一样，在users组中带有$符号的就是信任账户，信任账户的ntlmhash就是key，所以我们去获取这个账户的hash即可。有以下两种方式找到这个账户</p>
+<p>正常都知道在域内加了$符号的是机器账户。在域林内就不一样，在users组中带有$符号的就是信任账户，信任账户的ntlmhash就是key，所以我们去获取这个账户的hash即可。有以下两种方式找到这个账户</p>
 <h5 id="powershell"><a href="#powershell" class="headerlink" title="powershell"></a>powershell</h5><p>使用这句就能查到，但实战中可能环境问题powershell不方便，可以用另外一种方法</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Get-ADUser -filter * -Properties DistinguishedName,samAccountType | ?&#123;$_. name -like &quot;*$&quot;&#125;</span><br></pre></td></tr></table></figure>
 
