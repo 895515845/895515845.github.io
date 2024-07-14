@@ -1,0 +1,46 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> 静态免杀之patch白文件 · 季伯常  Blog</title><meta name="description" content="静态免杀之patch白文件 - null"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/favicon.png"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="https://www.jibochang.link/atom.xml" title="季伯常  Blog"><meta name="generator" content="Hexo 6.3.0"><link rel="alternate" href="/atom.xml" title="季伯常  Blog" type="application/atom+xml">
+</head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/favicon.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">静态免杀之patch白文件</h1><div class="post-info">Jul 14, 2024</div><div class="post-content"><p>之前在微信看到一篇文章<a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/nP0IqpGvGeWagmVsWtzC9">《三年了，还是VT全绿，它到底凭什么？》</a>，里面就讲述了样本的的一些方法，前段时间值守的时候抓了2个样本就用这个手法做的马，刚好这两天星球的fdx师傅写了如何手动patch，正好复现学习一下。</p>
+<h2 id="准备条件"><a href="#准备条件" class="headerlink" title="准备条件"></a>准备条件</h2><p>首先要找一个白文件，随便到哪里找都行，找到之后需要这个exe不能有dll依赖，如下</p>
+<p><img src="/2024/07/14/%E9%9D%99%E6%80%81%E5%85%8D%E6%9D%80%E4%B9%8Bpatch%E7%99%BD%E6%96%87%E4%BB%B6/image-20240714162431368.png" alt="image-20240714162431368"></p>
+<p>找到一个可以双击没反应的就ok了，接着再看看exe是多少位的，用于后面编写shellcode，可以看出很明显是64位的</p>
+<p><img src="/2024/07/14/%E9%9D%99%E6%80%81%E5%85%8D%E6%9D%80%E4%B9%8Bpatch%E7%99%BD%E6%96%87%E4%BB%B6/image-20240714165503630.png" alt="image-20240714165503630"></p>
+<h2 id="寻找patch点"><a href="#寻找patch点" class="headerlink" title="寻找patch点"></a>寻找patch点</h2><p>接着就用ida去找可以patch的点，打开之后看winmain函数</p>
+<p><img src="/2024/07/14/%E9%9D%99%E6%80%81%E5%85%8D%E6%9D%80%E4%B9%8Bpatch%E7%99%BD%E6%96%87%E4%BB%B6/image-20240714162804514.png" alt="image-20240714162804514"></p>
+<p>接着查看里面调用了哪些函数，可以看到里面有很多的函数，需要我们去寻找</p>
+<p><img src="/2024/07/14/%E9%9D%99%E6%80%81%E5%85%8D%E6%9D%80%E4%B9%8Bpatch%E7%99%BD%E6%96%87%E4%BB%B6/image-20240714162837373.png" alt="image-20240714162837373"></p>
+<p>我这边已经找到了一个函数<code>sub_140003890</code></p>
+<p><img src="/2024/07/14/%E9%9D%99%E6%80%81%E5%85%8D%E6%9D%80%E4%B9%8Bpatch%E7%99%BD%E6%96%87%E4%BB%B6/image-20240714162937406.png" alt="image-20240714162937406"></p>
+<p>点函数名按x查找调用，发现是<code>sub_140003190</code>调用</p>
+<p><img src="/2024/07/14/%E9%9D%99%E6%80%81%E5%85%8D%E6%9D%80%E4%B9%8Bpatch%E7%99%BD%E6%96%87%E4%BB%B6/image-20240714163100135.png" alt="image-20240714163100135"></p>
+<p><img src="/2024/07/14/%E9%9D%99%E6%80%81%E5%85%8D%E6%9D%80%E4%B9%8Bpatch%E7%99%BD%E6%96%87%E4%BB%B6/image-20240714163133172.png" alt="image-20240714163133172"></p>
+<p>再接着查找谁调用的<code>sub_140003190</code></p>
+<p><img src="/2024/07/14/%E9%9D%99%E6%80%81%E5%85%8D%E6%9D%80%E4%B9%8Bpatch%E7%99%BD%E6%96%87%E4%BB%B6/image-20240714163201395.png" alt="image-20240714163201395"></p>
+<p>发现是<code>sub_140004040</code>调用的，最后就回到了winmian函数</p>
+<p><img src="/2024/07/14/%E9%9D%99%E6%80%81%E5%85%8D%E6%9D%80%E4%B9%8Bpatch%E7%99%BD%E6%96%87%E4%BB%B6/image-20240714163244110.png" alt="image-20240714163244110"></p>
+<p>所以完整的调用链是winmain-&gt;sub_140004040-&gt;sub_140003190-&gt;sub_140003890，需要注意的是找的函数有几个条件</p>
+<ol>
+<li>函数要尽量大一些，如果太小没办法放下我们的shellcode</li>
+<li>尽量要让程序能触发到这个函数，不然patch也没法触发等于白整</li>
+</ol>
+<h2 id="文件定位"><a href="#文件定位" class="headerlink" title="文件定位"></a>文件定位</h2><p>在得知了函数之后要找到在文件中的位置，在IDA中给的地址是VA，需要转换成FOA</p>
+<p><img src="/2024/07/14/%E9%9D%99%E6%80%81%E5%85%8D%E6%9D%80%E4%B9%8Bpatch%E7%99%BD%E6%96%87%E4%BB%B6/image-20240714163747687.png" alt="image-20240714163747687"></p>
+<p>用cff explorer可以转换，得到了函数开始位置在<code>00002C90</code>偏移处</p>
+<p><img src="/2024/07/14/%E9%9D%99%E6%80%81%E5%85%8D%E6%9D%80%E4%B9%8Bpatch%E7%99%BD%E6%96%87%E4%BB%B6/image-20240714163854489.png" alt="image-20240714163854489"></p>
+<p>接着再找一下函数结尾的偏移，在<code>000031F7</code>偏移处</p>
+<p><img src="/2024/07/14/%E9%9D%99%E6%80%81%E5%85%8D%E6%9D%80%E4%B9%8Bpatch%E7%99%BD%E6%96%87%E4%BB%B6/image-20240714163952539.png" alt="image-20240714163952539"></p>
+<p><img src="/2024/07/14/%E9%9D%99%E6%80%81%E5%85%8D%E6%9D%80%E4%B9%8Bpatch%E7%99%BD%E6%96%87%E4%BB%B6/image-20240714164022508.png" alt="image-20240714164022508"></p>
+<p>然后就可以用winhex或者c32asm找到对应位置即可。</p>
+<h2 id="shellcode编写"><a href="#shellcode编写" class="headerlink" title="shellcode编写"></a>shellcode编写</h2><p>接着就需要编写shellcode，shellcode是一段位置无关的代码，所以要编写shellcode就要用动态函数进行调用，读取PEB，自实现GerProAddress，还有字符串需要放在text段中，github上有很多模板，这里就**<a target="_blank" rel="noopener" href="https://github.com/clownfive/CppDevShellcode">CppDevShellcode</a>**来编写，按照作者的说明来就好，生成之后提取text段的内容</p>
+<p><img src="/2024/07/14/%E9%9D%99%E6%80%81%E5%85%8D%E6%9D%80%E4%B9%8Bpatch%E7%99%BD%E6%96%87%E4%BB%B6/image-20240714164517080.png" alt="image-20240714164517080"></p>
+<p>开始位置在400，用c32提取出来</p>
+<p><img src="/2024/07/14/%E9%9D%99%E6%80%81%E5%85%8D%E6%9D%80%E4%B9%8Bpatch%E7%99%BD%E6%96%87%E4%BB%B6/image-20240714164606356.png" alt="image-20240714164606356"></p>
+<p><img src="/2024/07/14/%E9%9D%99%E6%80%81%E5%85%8D%E6%9D%80%E4%B9%8Bpatch%E7%99%BD%E6%96%87%E4%BB%B6/image-20240714164623435.png" alt="image-20240714164623435"></p>
+<p>最后这里30 c3后面的00可以不用，然后写个loader测试一下shellcode能不能正常运行</p>
+<p><img src="/2024/07/14/%E9%9D%99%E6%80%81%E5%85%8D%E6%9D%80%E4%B9%8Bpatch%E7%99%BD%E6%96%87%E4%BB%B6/image-20240714164805940.png" alt="image-20240714164805940"></p>
+<p>可以成功运行，说明shellcode没问题</p>
+<h2 id="patch替换"><a href="#patch替换" class="headerlink" title="patch替换"></a>patch替换</h2><p>最后只需要在对应的文件内替换提取出来的shellcode即可</p>
+<p><img src="/2024/07/14/%E9%9D%99%E6%80%81%E5%85%8D%E6%9D%80%E4%B9%8Bpatch%E7%99%BD%E6%96%87%E4%BB%B6/image-20240714165042733.png" alt="image-20240714165042733"></p>
+<p>替换之后打开就会弹出hello</p>
+<p><img src="/2024/07/14/%E9%9D%99%E6%80%81%E5%85%8D%E6%9D%80%E4%B9%8Bpatch%E7%99%BD%E6%96%87%E4%BB%B6/image-20240714165116223.png" alt="image-20240714165116223"></p>
+<p>后续可以写一下加载cs的shellcode，建议使用远程加载或者使用资源读取，再配合一些反沙箱就可以达到不错的效果</p>
+</div></article></div></main><footer><div class="paginator"><a href="/2024/06/30/%E8%B7%A8%E5%9F%9F%E6%94%BB%E5%87%BB/" class="next">NEXT</a></div><div class="copyright"><p>© 2024 <a href="https://www.jibochang.link"></a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script></body></html>
